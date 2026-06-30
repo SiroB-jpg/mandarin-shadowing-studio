@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mandarin Shadowing Studio — v1.0.0</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1e2b20">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mandarin Studio">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<script>(function(){var t=localStorage.getItem('mssTheme')||'sage';document.documentElement.setAttribute('data-theme',t);})();</script>
+</head>
+<body data-screen="study">
+<header>
+  <div class="header-inner">
+    <div class="header-text">
+      <h1>Mandarin Shadowing Studio</h1>
+      <p class="header-sub">v1.0.0 — Pinyin + character display, tone colours, vocabulary drill.</p>
+    </div>
+    <label class="theme-toggle" title="Toggle dark mode">
+      <input type="checkbox" id="themeToggle">
+      <span class="toggle-track"><span class="toggle-thumb"></span></span>
+      <span class="toggle-label">Dark mode</span>
+    </label>
+  </div>
+</header>
+
+<main>
+  <aside id="libraryPanel">
+    <h2>Library</h2>
+    <button id="openImport" class="ok wide">Import Sentences CSV</button>
+    <div class="row mt">
+      <button id="openVocabImport" class="secondary">Import Vocab CSV</button>
+      <button id="exportCsv" class="secondary">Export CSV</button>
+    </div>
+    <div class="row mt"><button id="clearAll" class="danger wide">Clear all data</button></div>
+    <hr>
+    <div id="tree" class="tree"></div>
+    <hr>
+    <label>Book</label><select id="bookSel"></select>
+    <label>Chapter</label><select id="chapterSel"></select>
+    <label>Group</label><select id="groupSel"></select>
+    <div class="row mt"><button id="prevGroup" class="light">← Group</button><button id="nextGroup" class="light">Group →</button></div>
+    <hr>
+    <div class="row"><button id="showBookmarks" class="light">★ Bookmarked</button><button id="showAll" class="light">All sentences</button></div>
+    <div id="reviewView" class="review"></div>
+    <div id="stats" class="status"></div>
+  </aside>
+
+  <section>
+    <div class="tabs desktop-tabs">
+      <button class="tab active" data-panel="study">Study</button>
+      <button class="tab" data-panel="verbs">Vocab drill</button>
+      <button class="tab" data-panel="settings">Settings</button>
+    </div>
+
+    <!-- ── Study panel ── -->
+    <div id="study" class="panel">
+      <div class="voice-row mobile-only">
+        <span class="small">Voice: <strong id="voiceChipLabel">ElevenLabs</strong></span>
+        <button class="mini light" id="goToSettings"><i class="ti ti-settings" aria-hidden="true"></i> Settings</button>
+      </div>
+      <div class="grid">
+        <div><label>Display</label><select id="displayMode"><option value="group">10-sentence group</option><option value="single">single sentence</option></select></div>
+        <div><label>Repeat each sentence</label><select id="repeat"><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select></div>
+        <div><label>Speed</label><select id="rate"><option value="0.4">0.4×</option><option value="0.6">0.6×</option><option value="0.8">0.8×</option><option value="1" selected>1.0×</option></select></div>
+        <div><label>Pause</label><select id="pause"><option value="0">no pause</option><option value="800" selected>short</option><option value="1800">medium</option><option value="3200">long</option><option value="5000">extra long</option></select></div>
+        <div><label>Translation</label><select id="showEnglish"><option value="show">show English</option><option value="hide">hide English</option></select></div>
+        <div><label>Playback mode</label><select id="playMode"><option value="current">current sentence only</option><option value="group" selected>current group</option><option value="chapter">current chapter</option><option value="loop-current">loop current sentence</option><option value="loop-group">loop current group</option><option value="loop-chapter">loop current chapter</option></select></div>
+        <div><label>Find</label><input id="search" placeholder="Search group..."></div>
+      </div>
+      <div class="controls">
+        <button id="mainToggle">Start</button>
+        <button id="prevSentence" class="light">← Sentence</button>
+        <button id="nextSentence" class="light">Sentence →</button>
+        <button id="hardReset" class="danger">Reset audio</button>
+      </div>
+      <div class="small">Hands-free playback through the current group. Audio reads the Hanzi characters. Tap a sentence to jump to it.</div>
+      <hr>
+      <div id="viewer"></div>
+    </div>
+
+    <!-- ── Vocab drill panel (id="verbs" for CSS compatibility) ── -->
+    <div id="verbs" class="panel hidden">
+      <h2>Vocabulary drill</h2>
+      <p class="small">Import a vocabulary CSV (columns: <strong>pinyin, hanzi, english, category</strong>) then browse and drill by category. Tone colours and sandhi are applied automatically.</p>
+      <div class="grid">
+        <div><label>Category</label><select id="vocabCat"></select></div>
+        <div><label>Item</label><select id="vocabSel"></select></div>
+        <div><label>Mode</label><select id="vocabMode">
+          <option value="once">play current item once</option>
+          <option value="loopitem">loop current item</option>
+          <option value="next" selected>play through category</option>
+          <option value="loopall">loop through category</option>
+        </select></div>
+        <div><label>Repeat each item</label><select id="vocabRepeat"><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option value="infinite">∞ loop</option></select></div>
+        <div><label>Speed</label><select id="vocabRate"><option value="0.4">0.4×</option><option value="0.6">0.6×</option><option value="0.8">0.8×</option><option value="1" selected>1.0×</option></select></div>
+        <div><label>Pause</label><select id="vocabPause"><option value="0">no pause</option><option value="800" selected>short</option><option value="1800">medium</option><option value="3200">long</option><option value="5000">extra long</option></select></div>
+        <div><label>Playback</label><button id="vocabToggle">Start</button></div>
+        <div><label>Move item</label><div class="row"><button id="prevItem" class="light">← Prev</button><button id="nextItem" class="light">Next →</button></div></div>
+      </div>
+      <div id="vocabStatus" class="status">No vocabulary imported yet.</div>
+      <div class="preloadRow mt"><div><span class="small">Pre-download vocabulary audio from ElevenLabs (current category)</span></div><div class="preloadBtns"><button id="vocabPreloadBtn" class="ok">⬇ Pre-download vocab audio</button><button id="vocabPreloadCancel" class="danger hidden">Cancel</button></div></div>
+      <div id="vocabView"></div>
+    </div>
+
+    <!-- ── Settings panel ── -->
+    <div id="settings" class="panel hidden">
+      <h2>Settings</h2>
+      <label>Voice</label>
+      <select id="voiceMode">
+        <option value="eleven">ElevenLabs</option>
+        <option value="system">System voice: Ting-Ting (Mandarin)</option>
+      </select>
+      <div id="elevenPanel" class="status mt">
+        <h3>ElevenLabs</h3>
+        <p class="small">Use a Mandarin-capable voice. The eleven_multilingual_v2 model supports Chinese characters — enter Hanzi in your sentences and it will read them correctly.</p>
+        <div class="grid">
+          <div><label>API key</label><input id="apiKey" type="password"></div>
+          <div><label>Voice ID</label><input id="voiceId"></div>
+          <div><label>Model</label><select id="model"><option value="eleven_multilingual_v2">eleven_multilingual_v2</option><option value="eleven_turbo_v2_5">eleven_turbo_v2_5</option></select></div>
+          <div><label>Save locally</label><select id="saveEleven"><option value="no">do not save</option><option value="yes">save on this browser</option></select></div>
+        </div>
+        <div class="row mt"><button id="saveElevenBtn" class="secondary">Save settings</button><button id="clearElevenBtn" class="danger">Clear settings</button></div>
+        <hr>
+        <h3>Pre-download sentence audio</h3>
+        <div class="preloadRow"><div><label>Scope</label><select id="preloadScope"><option value="group">current group</option><option value="chapter" selected>current chapter</option><option value="book">current book</option><option value="all">whole library</option></select></div><div class="preloadBtns"><button id="preloadBtn" class="ok">⬇ Pre-download audio</button><button id="preloadCancel" class="danger hidden">Cancel</button></div></div>
+      </div>
+    </div>
+
+    <div id="status" class="status">Ready.</div>
+  </section>
+</main>
+
+<nav class="mobile-nav" aria-label="Main navigation">
+  <button class="mobile-nav-btn" data-screen="library" aria-label="Library"><i class="ti ti-books" aria-hidden="true"></i><span>Library</span></button>
+  <button class="mobile-nav-btn active" data-screen="study" aria-label="Study"><i class="ti ti-headphones" aria-hidden="true"></i><span>Study</span></button>
+  <button class="mobile-nav-btn" data-screen="verbs" aria-label="Vocab drill"><i class="ti ti-cards" aria-hidden="true"></i><span>Vocab</span></button>
+  <button class="mobile-nav-btn" data-screen="settings" aria-label="Settings"><i class="ti ti-settings" aria-hidden="true"></i><span>Settings</span></button>
+</nav>
+
+<!-- ── Import modal ── -->
+<div id="importModal" class="modalwrap">
+  <div class="modal">
+    <div class="row"><h2 class="nomargin" id="importTitle">Import CSV</h2><button id="closeImport" class="secondary close">Close</button></div>
+    <p class="small">Columns: <span id="importCols"></span>. Analyse first, then import.</p>
+    <div class="grid">
+      <div><label>Choose CSV file</label><input id="csvFile" type="file" accept=".csv,text/csv"></div>
+      <div id="defaultBookRow"><label>Default book name</label><input id="defaultBook" value="Mandarin Corpus"></div>
+      <div><label>Default chapter name</label><input id="defaultChapter" value="Imported Chapter"></div>
+      <div><label>Paste CSV instead</label><textarea id="pasteCsv" placeholder="paste CSV here..."></textarea></div>
+    </div>
+    <div class="row mt"><button id="analyseFile" class="ok">Analyse file</button><button id="analysePaste" class="ok">Analyse pasted CSV</button><button id="importPreviewed">Import previewed data</button></div>
+    <hr>
+    <div id="importSummary" class="status">No CSV analysed yet.</div>
+    <div id="importPreview" class="preview"></div>
+  </div>
+</div>
+
+<!-- ── Edit modal ── -->
+<div id="editModal" class="modalwrap">
+  <div class="modal editModalBox">
+    <div class="row"><h2 class="nomargin">Edit sentence</h2><button id="closeEdit" class="secondary close">Close</button></div>
+    <p class="small">Edit pinyin (display), Hanzi (spoken to audio), and English translation.</p>
+    <label>Pinyin (display)</label><textarea id="editPinyin"></textarea>
+    <label>Hanzi 汉字 (spoken)</label><textarea id="editHanzi"></textarea>
+    <label>English translation</label><textarea id="editEnglish"></textarea>
+    <div class="row mt"><button id="saveEdit" class="ok">Save</button><button id="closeEditBottom" class="secondary">Cancel</button></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
