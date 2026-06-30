@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#1e2b20">
+<meta name="theme-color" content="#ffffff">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Mandarin Studio">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -67,10 +67,12 @@
       <div class="grid">
         <div><label>Display</label><select id="displayMode"><option value="group">10-sentence group</option><option value="single">single sentence</option></select></div>
         <div><label>Repeat each sentence</label><select id="repeat"><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select></div>
-        <div><label>Speed</label><select id="rate"><option value="0.4">0.4×</option><option value="0.6">0.6×</option><option value="0.8">0.8×</option><option value="1" selected>1.0×</option></select></div>
+        <div><label>Speed</label><select id="rate"><option value="0.4">0.4×</option><option value="0.6">0.6×</option><option value="0.8">0.8×</option><option value="1" selected>1.0×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="1.75">1.75×</option><option value="2">2.0×</option></select></div>
         <div><label>Pause</label><select id="pause"><option value="0">no pause</option><option value="800" selected>short</option><option value="1800">medium</option><option value="3200">long</option><option value="5000">extra long</option></select></div>
         <div><label>Translation</label><select id="showEnglish"><option value="show">show English</option><option value="hide">hide English</option></select></div>
+        <div><label>Colour mode</label><select id="colourMode"><option value="tone" selected>tone (1st–4th)</option><option value="word">word (by meaning)</option></select></div>
         <div><label>Playback mode</label><select id="playMode"><option value="current">current sentence only</option><option value="group" selected>current group</option><option value="chapter">current chapter</option><option value="loop-current">loop current sentence</option><option value="loop-group">loop current group</option><option value="loop-chapter">loop current chapter</option></select></div>
+        <div><label>Auto-scroll</label><select id="autoScroll"><option value="on" selected>on</option><option value="off">off</option></select></div>
         <div><label>Find</label><input id="search" placeholder="Search group..."></div>
       </div>
       <div class="controls">
@@ -98,7 +100,7 @@
           <option value="loopall">loop through category</option>
         </select></div>
         <div><label>Repeat each item</label><select id="vocabRepeat"><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option value="infinite">∞ loop</option></select></div>
-        <div><label>Speed</label><select id="vocabRate"><option value="0.4">0.4×</option><option value="0.6">0.6×</option><option value="0.8">0.8×</option><option value="1" selected>1.0×</option></select></div>
+        <div><label>Speed</label><select id="vocabRate"><option value="0.4">0.4×</option><option value="0.6">0.6×</option><option value="0.8">0.8×</option><option value="1" selected>1.0×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="1.75">1.75×</option><option value="2">2.0×</option></select></div>
         <div><label>Pause</label><select id="vocabPause"><option value="0">no pause</option><option value="800" selected>short</option><option value="1800">medium</option><option value="3200">long</option><option value="5000">extra long</option></select></div>
         <div><label>Playback</label><button id="vocabToggle">Start</button></div>
         <div><label>Move item</label><div class="row"><button id="prevItem" class="light">← Prev</button><button id="nextItem" class="light">Next →</button></div></div>

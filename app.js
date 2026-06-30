@@ -49,6 +49,34 @@ const Tones={
       if(/^\s*$/.test(tok))return tok;
       return`<span class="t${this.detect(tok)}">${Util.esc(tok)}</span>`;
     }).join("");
+  },
+  /* Return HTML string with word-index-coloured spans (CSS classes w0–w5) */
+  wordHtml(pinyin,useSandhi=false){
+    if(!pinyin)return"";
+    let text=useSandhi?this.sandhi(pinyin):pinyin;
+    let wi=0;
+    return text.split(/(\s+)/).map(tok=>{
+      if(/^\s*$/.test(tok))return tok;
+      return`<span class="w${wi++%6}">${Util.esc(tok)}</span>`;
+    }).join("");
+  },
+  /* Return HTML string for hanzi with word-index colours matching wordHtml */
+  hanziWordHtml(hanzi){
+    if(!hanzi)return"";
+    let wi=0;
+    return[...hanzi].map(c=>{
+      if(/[\s，。！？、；：…·]/u.test(c))return Util.esc(c);
+      return`<span class="w${wi++%6}">${Util.esc(c)}</span>`;
+    }).join("");
+  },
+  /* Colour pinyin using current mode (tone or word) */
+  colourPinyin(pinyin,useSandhi=false){
+    return $("colourMode")?.value==="word"?this.wordHtml(pinyin,useSandhi):this.html(pinyin,useSandhi);
+  },
+  /* Colour hanzi using current mode (tone mode = plain text; word mode = word colours) */
+  colourHanzi(hanzi){
+    if(!hanzi)return"";
+    return $("colourMode")?.value==="word"?this.hanziWordHtml(hanzi):Util.esc(hanzi);
   }
 };
 
@@ -142,8 +170,8 @@ const UI={
     const selectCard=()=>{if(i!==undefined)SentenceController.jumpToIndex(i);};
     d.onclick=selectCard;
     d.addEventListener("touchend",e=>{if(e.target.closest("button"))return;e.preventDefault();selectCard();},{passive:false});
-    let pinyinHTML=Tones.html(s.pinyin);
-    d.innerHTML=`<span class="pill">${s.order}</span>${s.bookmarked?'<span class="pill">★</span>':""}<div class="pinyin-text">${pinyinHTML}</div>${s.hanzi?`<div class="hanzi-text">${Util.esc(s.hanzi)}</div>`:""} ${showEn&&s.english?`<div class="english">${Util.esc(s.english)}</div>`:""}<div class="cardTools"><button class="mini light" data-a="play">Play</button><button class="mini light" data-a="bm">★</button><button class="mini light" data-a="edit">Edit</button></div>`;
+    let pinyinHTML=Tones.colourPinyin(s.pinyin);
+    d.innerHTML=`<span class="pill">${s.order}</span>${s.bookmarked?'<span class="pill">★</span>':""}<div class="pinyin-text">${pinyinHTML}</div>${s.hanzi?`<div class="hanzi-text">${Tones.colourHanzi(s.hanzi)}</div>`:""} ${showEn&&s.english?`<div class="english">${Util.esc(s.english)}</div>`:""}<div class="cardTools"><button class="mini light" data-a="play">Play</button><button class="mini light" data-a="bm">★</button><button class="mini light" data-a="edit">Edit</button></div>`;
     d.querySelector('[data-a="play"]').onclick=async e=>{e.stopPropagation();await Speech.speak(s.hanzi||s.pinyin);};
     d.querySelector('[data-a="bm"]').onclick=async e=>{e.stopPropagation();s.bookmarked=!s.bookmarked;await Storage.put(SS,s);await Library.refresh();};
     d.querySelector('[data-a="edit"]').onclick=e=>{e.stopPropagation();Editor.open(s);};
@@ -156,7 +184,7 @@ const UI={
     let g=Library.group(),q=$("search").value.trim().toLowerCase();
     if($("displayMode").value=="single"){let s=Library.current();if(s)v.appendChild(this.card(s,true));return;}
     g.filter(s=>!q||(s.pinyin+" "+s.hanzi+" "+s.english).toLowerCase().includes(q)).forEach((s,i)=>v.appendChild(this.card(s,i==App.cur.index,i)));
-    setTimeout(()=>{let a=$("viewer").querySelector(".card.active");if(a)a.scrollIntoView({behavior:"smooth",block:"nearest"});},80);
+    if($("autoScroll")?.value!=="off"){setTimeout(()=>{let a=$("viewer").querySelector(".card.active");if(a)a.scrollIntoView({behavior:"smooth",block:"nearest"});},80);}
   },
   stats(){
     let books=Util.uniq(App.sentences.map(s=>s.book)).length,ch=Util.uniq(App.sentences.map(s=>s.book+"|"+s.chapter)).length,gs=Util.uniq(App.sentences.map(s=>s.book+"|"+s.chapter+"|"+Util.gnum(s))).length;
@@ -184,7 +212,7 @@ const Speech={
     if(App.currentAudioResolve){try{App.currentAudioResolve();}catch(e){}App.currentAudioResolve=null;}
   },
   stop(){speechSynthesis.cancel();this.stopAudioOnly();},
-  system(text){return new Promise(res=>{speechSynthesis.cancel();let done=false,timer=null;const finish=()=>{if(done)return;done=true;if(timer)clearTimeout(timer);res();};let u=new SpeechSynthesisUtterance(text);u.lang="zh-CN";u.rate=PlaybackControls.rate();if(App.mandarinVoice)u.voice=App.mandarinVoice;u.onend=finish;u.onerror=finish;timer=setTimeout(finish,25000);speechSynthesis.speak(u);});},
+  system(text){return new Promise(res=>{speechSynthesis.cancel();let done=false,timer=null;const finish=()=>{if(done)return;done=true;if(timer)clearTimeout(timer);res();};let u=new SpeechSynthesisUtterance(text);u.lang="zh-CN";if(App.mandarinVoice)u.voice=App.mandarinVoice;u.rate=PlaybackControls.rate();u.onend=finish;u.onerror=finish;timer=setTimeout(finish,25000);speechSynthesis.speak(u);});},
   playBlob(blob){return new Promise((res,rej)=>{
     this.stopAudioOnly();
     let url=URL.createObjectURL(blob),a=new Audio(),settled=false,started=false,startTimer=null,totalTimer=null;
@@ -192,9 +220,9 @@ const Speech={
     const cleanup=()=>{if(startTimer)clearTimeout(startTimer);if(totalTimer)clearTimeout(totalTimer);try{URL.revokeObjectURL(url);}catch(e){}App.currentAudioResolve=null;if(App.currentAudio===a)App.currentAudio=null;};
     const finish=()=>{if(settled)return;settled=true;cleanup();res();};
     const fail=err=>{if(settled)return;settled=true;cleanup();try{a.pause();}catch(e){}rej(err||new Error("Audio failed"));};
-    App.currentAudioResolve=finish;a.preload="auto";a.playsInline=true;a.playbackRate=PlaybackControls.rate();
+    App.currentAudioResolve=finish;a.preload="auto";a.playsInline=true;
     a.onplaying=()=>{started=true;if(startTimer)clearTimeout(startTimer);};a.onended=finish;a.onerror=()=>fail(new Error("Audio playback error"));a.onstalled=()=>{if(!started)fail(new Error("Audio stalled"));};
-    a.src=url;startTimer=setTimeout(()=>{if(!started)fail(new Error("Audio did not start"));},9000);totalTimer=setTimeout(()=>fail(new Error("Audio timed out")),45000);
+    a.src=url;a.playbackRate=PlaybackControls.rate();startTimer=setTimeout(()=>{if(!started)fail(new Error("Audio did not start"));},9000);totalTimer=setTimeout(()=>fail(new Error("Audio timed out")),45000);
     let p=a.play();if(p&&p.catch)p.catch(err=>fail(err));
   });},
   key(text){return`${$("voiceId").value}|${$("model").value}|${text}`;},
@@ -284,8 +312,8 @@ const VocabDrill={
     let el=$("vocabView");if(!el)return;
     let id=$("vocabSel").value,v=App.vocab.find(x=>String(x.id)===id);
     if(!v){el.innerHTML="";return;}
-    let py=Tones.html(v.pinyin,true);
-    el.innerHTML=`<div class="vocab-card"><div class="vocab-pinyin">${py}</div>${v.hanzi?`<div class="vocab-hanzi">${Util.esc(v.hanzi)}</div>`:""}${v.english?`<div class="vocab-english">${Util.esc(v.english)}</div>`:""}${v.category?`<span class="pill">${Util.esc(v.category)}</span>`:""}</div>`;
+    let py=Tones.colourPinyin(v.pinyin,true);
+    el.innerHTML=`<div class="vocab-card"><div class="vocab-pinyin">${py}</div>${v.hanzi?`<div class="vocab-hanzi">${Tones.colourHanzi(v.hanzi)}</div>`:""}${v.english?`<div class="vocab-english">${Util.esc(v.english)}</div>`:""}${v.category?`<span class="pill">${Util.esc(v.category)}</span>`:""}</div>`;
   },
   provider(){
     let items=this.items();if(!items.length)return{next:()=>null};
@@ -440,15 +468,15 @@ function bind(){
   $("chapterSel").onchange=e=>{App.cur.chapter=e.target.value;App.cur.group=1;App.cur.index=0;UI.renderAll();};
   $("groupSel").onchange=e=>{App.cur.group=Number(e.target.value);App.cur.index=0;UI.renderAll();};
   $("prevGroup").onclick=()=>Nav.prevGroup();$("nextGroup").onclick=()=>Nav.nextGroup();
-  $("showBookmarks").onclick=()=>{$("reviewView").innerHTML=App.sentences.filter(s=>s.bookmarked).map(s=>`<div class="card"><div class="pinyin-text">${Tones.html(s.pinyin)}</div>${s.hanzi?`<div class="hanzi-text">${Util.esc(s.hanzi)}</div>`:""}<div class="english">${Util.esc(s.english)}</div></div>`).join("")||"<p>No bookmarked sentences.</p>";};
-  $("showAll").onclick=()=>{$("reviewView").innerHTML=App.sentences.map(s=>`<div class="card"><span class="pill">${Util.esc(s.book)} / ${Util.esc(s.chapter)} / ${s.order}</span><div class="pinyin-text">${Tones.html(s.pinyin)}</div>${s.hanzi?`<div class="hanzi-text">${Util.esc(s.hanzi)}</div>`:""}</div>`).join("");};
+  $("showBookmarks").onclick=()=>{$("reviewView").innerHTML=App.sentences.filter(s=>s.bookmarked).map(s=>`<div class="card"><div class="pinyin-text">${Tones.colourPinyin(s.pinyin)}</div>${s.hanzi?`<div class="hanzi-text">${Tones.colourHanzi(s.hanzi)}</div>`:""}<div class="english">${Util.esc(s.english)}</div></div>`).join("")||"<p>No bookmarked sentences.</p>";};
+  $("showAll").onclick=()=>{$("reviewView").innerHTML=App.sentences.map(s=>`<div class="card"><span class="pill">${Util.esc(s.book)} / ${Util.esc(s.chapter)} / ${s.order}</span><div class="pinyin-text">${Tones.colourPinyin(s.pinyin)}</div>${s.hanzi?`<div class="hanzi-text">${Tones.colourHanzi(s.hanzi)}</div>`:""}</div>`).join("");};
 
   // Study
   $("prevSentence").onclick=()=>SentenceController.prev();
   $("nextSentence").onclick=()=>SentenceController.next();
   $("mainToggle").onclick=()=>SentenceController.toggle();
   $("hardReset").onclick=()=>{MainPlayer.stop("Audio reset.");VocabPlayer.stop("Audio reset.");};
-  ["displayMode","showEnglish"].forEach(id=>{if($(id))$(id).onchange=()=>UI.renderViewer();});
+  ["displayMode","showEnglish","colourMode"].forEach(id=>{if($(id))$(id).onchange=()=>{UI.renderViewer();VocabDrill.renderView();};});
   $("playMode").onchange=()=>SentenceController.restart();
   $("search").oninput=()=>UI.renderViewer();
 

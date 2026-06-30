@@ -1,5 +1,5 @@
 :root{
-  --bg:#eef1ed;--panel:#f5f7f4;--ink:#1e2b20;--muted:#748a74;
+  --bg:#ffffff;--panel:#f5f7f4;--ink:#1e2b20;--muted:#748a74;
   --accent:#2a5c44;--soft:#d4dbd3;--active:#fefce8;--active-border:#bca84a;
   --border:#d4dbd3;--danger:#b83030;--ok:#1e7340;
   --header-bg:#1e2b20;--header-sub:#8faa8f;
@@ -8,6 +8,8 @@
   --nav-h:58px;
   /* Tone colours — light mode */
   --t1:#c42020;--t2:#1e7a3c;--t3:#1a5276;--t4:#b87700;
+  /* Word colours — light mode (6-colour cycling palette) */
+  --w0:#c0392b;--w1:#16a085;--w2:#2471a3;--w3:#d4800a;--w4:#8e44ad;--w5:#1e8449;
 }
 :root[data-theme="dark"]{
   --bg:#1a1916;--panel:#201f1c;--ink:#e8e3dc;--muted:#6b6660;
@@ -18,10 +20,14 @@
   --tree-hover:#252420;--tree-active-bg:#2e2a22;
   /* Tone colours — dark mode (brighter) */
   --t1:#e84444;--t2:#3dba60;--t3:#4a9ece;--t4:#e6aa18;
+  /* Word colours — dark mode (brighter) */
+  --w0:#e05555;--w1:#20c9a5;--w2:#4a9ece;--w3:#e6aa18;--w4:#b059d4;--w5:#3dba60;
 }
 
 /* ── Tone colour classes ─────────────────────────────────────────────────── */
 .t1{color:var(--t1)}.t2{color:var(--t2)}.t3{color:var(--t3)}.t4{color:var(--t4)}.t0{color:var(--muted)}
+/* ── Word colour classes ─────────────────────────────────────────────────── */
+.w0{color:var(--w0)}.w1{color:var(--w1)}.w2{color:var(--w2)}.w3{color:var(--w3)}.w4{color:var(--w4)}.w5{color:var(--w5)}
 
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
